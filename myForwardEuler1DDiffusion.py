@@ -8,6 +8,8 @@
 import numpy as np
 import pylab as pl
 from math import pi
+from scipy import sparse
+from scipy.sparse.linalg import spsolve
 
 # set problem parameters/functions
 kappa = 1.0   # diffusion constant
@@ -24,7 +26,7 @@ def u_exact(x,t):
     return y
 
 # set numerical parameters
-mx = 10     # number of gridpoints in space
+mx = 40     # number of gridpoints in space
 mt = 1000   # number of gridpoints in time
 
 
@@ -46,15 +48,25 @@ u_jp1 = np.zeros(x.size)      # u at next time step
 for i in range(0, mx+1):
     u_j[i] = u_I(x[i])
 
+# Define diagonals of matrix
+upper = (-lmbda) * np.ones(mx-2)
+lower = upper
+diag = (1+2*lmbda) * np.ones(mx-1)
+A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+
+
 # Solve the PDE: loop over all time points
 for n in range(1, mt+1):
     # Forward Euler timestep at inner mesh points
-    for i in range(1, mx):
-        u_jp1[i] = u_j[i] + lmbda*(u_j[i-1] - 2*u_j[i] + u_j[i+1])
-        
+    # for i in range(1, mx):
+    #     u_jp1[i] = u_j[i] + lmbda*(u_j[i-1] - 2*u_j[i] + u_j[i+1])
+    # uncomment below for matrix forward euler
+    #u_jp1[1:-1] = A.dot(u_j[1:-1])
+    u_jp1[1:-1] = spsolve(A,u_j[1:-1])
+
     # Boundary conditions
     u_jp1[0] = 0; u_jp1[mx] = 0
-        
+
     # Update u_j
     u_j[:] = u_jp1[:]
 
@@ -65,4 +77,4 @@ pl.plot(xx,u_exact(xx,T),'b-',label='exact')
 pl.xlabel('x')
 pl.ylabel('u(x,0.5)')
 pl.legend(loc='upper right')
-pl.show
+pl.show()
