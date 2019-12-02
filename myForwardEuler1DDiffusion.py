@@ -48,10 +48,19 @@ u_jp1 = np.zeros(x.size)      # u at next time step
 for i in range(0, mx+1):
     u_j[i] = u_I(x[i])
 
-# Define diagonals of matrix
+# Define diagonals of matrix for forwards
+upper = (lmbda) * np.ones(mx-2)
+lower = upper
+diag = (1-2*lmbda) * np.ones(mx-1)
+
+# Define diagonals of matrix for backwards
 upper = (-lmbda) * np.ones(mx-2)
 lower = upper
 diag = (1+2*lmbda) * np.ones(mx-1)
+
+#Define diagonals of matrix for crank-nicholson
+
+
 A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
 
 
@@ -62,6 +71,7 @@ for n in range(1, mt+1):
     #     u_jp1[i] = u_j[i] + lmbda*(u_j[i-1] - 2*u_j[i] + u_j[i+1])
     # uncomment below for matrix forward euler
     #u_jp1[1:-1] = A.dot(u_j[1:-1])
+    #matrix form backward and central
     u_jp1[1:-1] = spsolve(A,u_j[1:-1])
 
     # Boundary conditions
