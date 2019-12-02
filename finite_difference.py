@@ -62,7 +62,7 @@ def central(lmbda,u_j,u_jp1):
 
     return u_j
 
-def Finite_Difference(method,intial_cond,boundary_conds,mx,mt,params,u_exact = 0):
+def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 0):
     # set up the numerical environment variables
     kappa = params[0]
     L = params[1]
@@ -82,7 +82,7 @@ def Finite_Difference(method,intial_cond,boundary_conds,mx,mt,params,u_exact = 0
 
     # Set initial condition
     for i in range(0, mx+1):
-        u_j[i] = intial_cond(x[i])
+        u_j[i] = initial_cond(x[i])
 
     if method == 'forward':
         # Define diagonal matrix for forwards
