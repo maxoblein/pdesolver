@@ -192,7 +192,7 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
     deltat_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,10):
+        for n in range(1,12):
             mt = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             deltat_list.append(diagnostics[2])
@@ -202,7 +202,7 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
 
     else:
         u_T_list = []
-        for n in range(1,10):
+        for n in range(1,12):
             mt = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             u_T_list.append(u_T)
@@ -229,7 +229,7 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
     deltax_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,10):
+        for n in range(1,12):
             mx = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             deltax_list.append(diagnostics[1])
@@ -239,7 +239,7 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
 
     else:
         u_T_list = []
-        for n in range(1,10):
+        for n in range(1,12):
             mx = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             u_T_list.append(u_T)
