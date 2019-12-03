@@ -26,7 +26,7 @@ def u_exact(x,t):
     return y
 
 # set numerical parameters
-mx = 40     # number of gridpoints in space
+mx = 10     # number of gridpoints in space
 mt = 1000   # number of gridpoints in time
 
 
@@ -54,9 +54,9 @@ lower = upper
 diag = (1-2*lmbda) * np.ones(mx-1)
 
 # Define diagonals of matrix for backwards
-upper = (-lmbda) * np.ones(mx-2)
-lower = upper
-diag = (1+2*lmbda) * np.ones(mx-1)
+# upper = (-lmbda) * np.ones(mx-2)
+# lower = upper
+# diag = (1+2*lmbda) * np.ones(mx-1)
 
 #Define diagonals of matrix for crank-nicholson
 
@@ -70,9 +70,9 @@ for n in range(1, mt+1):
     # for i in range(1, mx):
     #     u_jp1[i] = u_j[i] + lmbda*(u_j[i-1] - 2*u_j[i] + u_j[i+1])
     # uncomment below for matrix forward euler
-    #u_jp1[1:-1] = A.dot(u_j[1:-1])
+    u_jp1[1:-1] = A.dot(u_j[1:-1])
     #matrix form backward and central
-    u_jp1[1:-1] = spsolve(A,u_j[1:-1])
+    #u_jp1[1:-1] = spsolve(A,u_j[1:-1])
 
     # Boundary conditions
     u_jp1[0] = 0; u_jp1[mx] = 0

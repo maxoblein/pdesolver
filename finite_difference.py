@@ -4,7 +4,7 @@ from math import pi
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
-def forward(lmbda,u_j,u_jp1):
+def forward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
     # Define diagonal matrix for forwards
     upper = (lmbda) * np.ones(mx-2)
     lower = upper
@@ -23,7 +23,7 @@ def forward(lmbda,u_j,u_jp1):
 
     return u_j
 
-def backward(lmbda,u_j,u_jp1):
+def backward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
     # Define diagonal matrix for backwards
     upper = (-lmbda) * np.ones(mx-2)
     lower = upper
@@ -42,8 +42,8 @@ def backward(lmbda,u_j,u_jp1):
 
     return u_j
 
-def central(lmbda,u_j,u_jp1):
-    upper = (lmda/2) * np.ones(mx-2)
+def central(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
+    upper = (lmbda/2) * np.ones(mx-2)
     lower = upper
     Adiag = (1+lmbda) * np.ones(mx-1)
     Bdiag = (1-lmbda) * np.ones(mx-1)
@@ -82,24 +82,24 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     # Set initial condition
     for i in range(0, mx+1):
-        u_j[i] = initial_cond(x[i])
+        u_j[i] = initial_cond(x[i],params)
 
     if method == 'forward':
         # Define diagonal matrix for forwards
-        u_T = forward(lmbda,u_j,u_jp1,boundary_conds)
+        u_T = forward(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
 
     if method == 'backward':
         # Define diagonal matrix for backwards
-        u_T = backward(lmbda,u_j,u_jp1,boundary_conds)
+        u_T = backward(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
 
-    if method == 'crank-nicholson':
+    if method == 'crankatron':
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,u_j,u_jp1,boundary_conds)
+        u_T = central(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
 
     pl.plot(x,u_j,'ro',label='num')
     xx = np.linspace(0,L,250)
     if u_exact != 0:
-        pl.plot(xx,u_exact(xx,T),'b-',label='exact')
+        pl.plot(xx,u_exact(xx,T,params),'b-',label='exact')
     pl.xlabel('x')
     pl.ylabel('u(x,0.5)')
     pl.legend(loc='upper right')
