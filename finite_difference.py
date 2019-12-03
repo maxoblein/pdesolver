@@ -4,12 +4,25 @@ from math import pi
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
-def forward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
+def forward(lmbda,mx,mt,u_j,boundary_conds):
+    '''
+    A function that implements the matrix form of the forward difference
+    method to solve pdes numerically.
+
+    Inputs: -lmbda: The mesh fourier number for the system (float)
+            -mx: The number of gridpoints in space (float)
+            -mt: The number of gridpoints in time (float)
+            -u_j: The initial condition vector U(x,0) (ndarray)
+            -boundary_conds: The conditions at U(0,t) and U(L,t)
+
+    Output: -u_T: The solution to the pde at U(x,T) (ndarray)
+    '''
     # Define diagonal matrix for forwards
     upper = (lmbda) * np.ones(mx-2)
     lower = upper
     diag = (1-2*lmbda) * np.ones(mx-1)
     A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+    u_jp1 = np.zeros(u_j.size)      # u at next time step
 
     for n in range(1, mt+1):
         # solve up to end of time period
@@ -20,15 +33,28 @@ def forward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
 
         #update
         u_j[:] = u_jp1[:]
+    u_T = u_j
+    return u_T
 
-    return u_j
+def backward(lmbda,mx,mt,u_j,boundary_conds):
+    '''
+    A function that implements the matrix form of the backward difference
+    method to solve pdes numerically.
 
-def backward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
+    Inputs: -lmbda: The mesh fourier number for the system (float)
+            -mx: The number of gridpoints in space (float)
+            -mt: The number of gridpoints in time (float)
+            -u_j: The initial condition vector U(x,0) (ndarray)
+            -boundary_conds: The conditions at U(0,t) and U(L,t)
+
+    Output: -u_T: The solution to the pde at U(x,T) (ndarray)
+    '''
     # Define diagonal matrix for backwards
     upper = (-lmbda) * np.ones(mx-2)
     lower = upper
     diag = (1+2*lmbda) * np.ones(mx-1)
     A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+    u_jp1 = np.zeros(u_j.size)      # u at next time step
 
     for n in range(1, mt+1):
         # solve up to end of time period
@@ -40,15 +66,29 @@ def backward(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
         #update
         u_j[:] = u_jp1[:]
 
-    return u_j
+    u_T = u_j
+    return u_T
 
-def central(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
+def central(lmbda,mx,mt,u_j,boundary_conds):
+    '''
+    A function that implements the matrix form of the Crank-Nicholson
+    method to solve pdes numerically.
+
+    Inputs: -lmbda: The mesh fourier number for the system (float)
+            -mx: The number of gridpoints in space (float)
+            -mt: The number of gridpoints in time (float)
+            -u_j: The initial condition vector U(x,0) (ndarray)
+            -boundary_conds: The conditions at U(0,t) and U(L,t)
+
+    Output: -u_T: The solution to the pde at U(x,T) (ndarray)
+    '''
     upper = (lmbda/2) * np.ones(mx-2)
     lower = upper
     Adiag = (1+lmbda) * np.ones(mx-1)
     Bdiag = (1-lmbda) * np.ones(mx-1)
     A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
     B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
+    u_jp1 = np.zeros(u_j.size)      # u at next time step
 
     for n in range(1, mt+1):
         # solve up to end of time period
@@ -60,9 +100,27 @@ def central(lmbda,mx,mt,u_j,u_jp1,boundary_conds):
         #update
         u_j[:] = u_jp1[:]
 
-    return u_j
+    u_T = u_j
+    return u_T
 
-def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 0):
+def find_error(u_T_approx,u_T_exact):
+    return np.sum((u_T_exact - u_T_approx)**2)
+
+
+def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 0,plot = False):
+    '''
+    Function that implements the finite difference method
+    for solving pdes numerically.
+
+    Inputs: -method: e.g. 'forward' for forward difference (string)
+            -initial_cond: Function for U(x,0) callable
+            -boundary_conds:
+            -mx: Number of gridpoints in space (float)
+            -mt: Number of gripoints in time (float)
+            -params: parameters of the system [kappa,Length of domain in x,Time to solve to]
+            -u_exact: Optional function for the exact solution U(x,T) callable
+            -plot: Optional boolean to display plot of numerical solution wit true sol overlayed
+    '''
     # set up the numerical environment variables
     kappa = params[0]
     L = params[1]
@@ -76,9 +134,14 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
     print("deltat=",deltat)
     print("lambda=",lmbda)
 
+    #check that program will run
+    if method == 'forward' and lmbda > 0.5:
+        print(r'Error forward difference is only stable if lambda is less than 0.5')
+        return [1,1]
+
     # set up the solution variables
     u_j = np.zeros(x.size)        # u at current time step
-    u_jp1 = np.zeros(x.size)      # u at next time step
+
 
     # Set initial condition
     for i in range(0, mx+1):
@@ -86,21 +149,29 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     if method == 'forward':
         # Define diagonal matrix for forwards
-        u_T = forward(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
+        u_T = forward(lmbda,mx,mt,u_j,boundary_conds)
 
     if method == 'backward':
         # Define diagonal matrix for backwards
-        u_T = backward(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
+        u_T = backward(lmbda,mx,mt,u_j,boundary_conds)
 
-    if method == 'crankatron':
+    if method == 'crank':
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,mx,mt,u_j,u_jp1,boundary_conds)
+        u_T = central(lmbda,mx,mt,u_j,boundary_conds)
 
-    pl.plot(x,u_j,'ro',label='num')
-    xx = np.linspace(0,L,250)
     if u_exact != 0:
-        pl.plot(xx,u_exact(xx,T,params),'b-',label='exact')
-    pl.xlabel('x')
-    pl.ylabel('u(x,0.5)')
-    pl.legend(loc='upper right')
-    pl.show()
+        error = find_error(u_T,u_exact(x,T,params))
+
+    if u_exact == 0:
+        error = 0
+
+    if plot == True:
+        pl.plot(x,u_j,'ro',label='num')
+        xx = np.linspace(0,L,250)
+        if u_exact != 0:
+            pl.plot(xx,u_exact(xx,T,params),'b-',label='exact')
+        pl.xlabel('x')
+        pl.ylabel('u(x,0.5)')
+        pl.legend(loc='upper right')
+        pl.show()
+    return u_T,error
