@@ -174,4 +174,6 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
         pl.ylabel('u(x,0.5)')
         pl.legend(loc='upper right')
         pl.show()
-    return u_T,error
+
+    diagnostics = [error,deltax,deltat,lmbda]
+    return u_T,diagnostics
