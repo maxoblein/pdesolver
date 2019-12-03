@@ -103,8 +103,8 @@ def central(lmbda,mx,mt,u_j,boundary_conds):
     u_T = u_j
     return u_T
 
-def find_error(u_T_approx,u_T_exact):
-    return np.sum((u_T_exact - u_T_approx)**2)
+def find_error_with_true(u_T_approx,u_T_exact):
+    return np.sqrt(np.sum((u_T_exact - u_T_approx)**2))
 
 
 def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 0,plot = False):
@@ -136,7 +136,7 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     #check that program will run
     if method == 'forward' and lmbda > 0.5:
-        print(r'Error forward difference is only stable if lambda is less than 0.5')
+        print('Error forward difference is only stable if lambda is less than 0.5')
         return [1,1]
 
     # set up the solution variables
@@ -160,7 +160,7 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
         u_T = central(lmbda,mx,mt,u_j,boundary_conds)
 
     if u_exact != 0:
-        error = find_error(u_T,u_exact(x,T,params))
+        error = find_error_with_true(u_T,u_exact(x,T,params))
 
     if u_exact == 0:
         error = 0
@@ -177,3 +177,59 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     diagnostics = [error,deltax,deltat,lmbda]
     return u_T,diagnostics
+
+def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0):
+    deltat_list = []
+    error_list = []
+    if u_exact != 0:
+        for n in range(1,10):
+            mt = 2**n
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            deltat_list.append(diagnostics[2])
+            error_list.append(diagnostics[0])
+        pl.loglog(deltat_list,error_list)
+
+
+    else:
+        u_T_list = []
+        for n in range(1,10):
+            mt = 2**n
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            u_T_list.append(u_T)
+            deltat_list.append(diagnostics[2])
+        for i in range(len(u_T_list)-1):
+            error_list.append(np.sqrt(np.sum((u_T_list[i+1] - u_T_list[i])**2)))
+        pl.loglog(deltat_list[:-1],error_list)
+    pl.xlabel('Number of gridpoints in time')
+    pl.ylabel('Error between finite difference and exact solution')
+    pl.show()
+    return True
+
+def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0):
+    deltax_list = []
+    error_list = []
+    if u_exact != 0:
+        for n in range(1,10):
+            mx = 2**n
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            deltax_list.append(diagnostics[1])
+            error_list.append(diagnostics[0])
+        pl.loglog(deltax_list,error_list)
+
+
+    else:
+        u_T_list = []
+        for n in range(1,10):
+            mx = 2**n
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            u_T_list.append(u_T)
+            deltax_list.append(diagnostics[1])
+        for i in range(len(u_T_list)-1):
+            len_now = len(u_T_list[i])
+            len_next = len(u_T_list[i+1])
+            error_list.append(np.sqrt((u_T_list[i+1][int(np.round(len_next/2))])-(u_T_list[i][int(np.round(len_now/2))])**2))
+        pl.loglog(deltax_list[:-1],error_list)
+    pl.xlabel('Number of gridpoints in space')
+    pl.ylabel('Error between finite difference and exact solution')
+    pl.show()
+    return True
