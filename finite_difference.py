@@ -179,6 +179,16 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
     return u_T,diagnostics
 
 def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0):
+    '''
+    Function to plot a loglog error plot given a static mx and varying mt
+
+    Inputs: -method: e.g. 'forward' for forward difference (string)
+            -initial_cond: Function for U(x,0) callable
+            -boundary_conds:
+            -mx: Number of gridpoints in space (float)
+            -params: parameters of the system [kappa,Length of domain in x,Time to solve to]
+            -u_exact: Optional function for the exact solution U(x,T) callable
+    '''
     deltat_list = []
     error_list = []
     if u_exact != 0:
@@ -206,6 +216,16 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
     return True
 
 def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0):
+    '''
+    Function to plot a loglog error plot given a static mt and varying mx
+
+    Inputs: -method: e.g. 'forward' for forward difference (string)
+            -initial_cond: Function for U(x,0) callable
+            -boundary_conds:
+            -mt: Number of gridpoints in time (float)
+            -params: parameters of the system [kappa,Length of domain in x,Time to solve to]
+            -u_exact: Optional function for the exact solution U(x,T) callable
+    '''
     deltax_list = []
     error_list = []
     if u_exact != 0:
