@@ -4,7 +4,7 @@ from math import pi
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
-def forward(lmbda,mx,mt,u_j,boundary_conds):
+def forward(lmbda,mx,mt,deltat,u_j,boundary_conds):
     '''
     A function that implements the matrix form of the forward difference
     method to solve pdes numerically.
@@ -24,19 +24,28 @@ def forward(lmbda,mx,mt,u_j,boundary_conds):
     A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
     u_jp1 = np.zeros(u_j.size)      # u at next time step
 
+
+    #Loop below for constant dirichlet boundary_conds
+    bc_vector = np.zeros(mx-1)
+
     for n in range(1, mt+1):
+        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
         # solve up to end of time period
-        u_jp1[1:-1] = A.dot(u_j[1:-1])
+        u_jp1[1:-1] = A.dot(u_j[1:-1]) + bc_vector
 
         #apply boundary cond
-        u_jp1[0] = boundary_conds[0]; u_jp1[mx] = boundary_conds[1]
+        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
 
         #update
         u_j[:] = u_jp1[:]
+
+
+
     u_T = u_j
     return u_T
 
-def backward(lmbda,mx,mt,u_j,boundary_conds):
+def backward(lmbda,mx,mt,deltat,u_j,boundary_conds):
     '''
     A function that implements the matrix form of the backward difference
     method to solve pdes numerically.
@@ -56,12 +65,18 @@ def backward(lmbda,mx,mt,u_j,boundary_conds):
     A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
     u_jp1 = np.zeros(u_j.size)      # u at next time step
 
+    #for dirichlet boundary_conds
+    bc_vector = np.zeros(mx-1)
+
+
     for n in range(1, mt+1):
+        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
         # solve up to end of time period
-        u_jp1[1:-1] = spsolve(A,u_j[1:-1])
+        u_jp1[1:-1] = spsolve(A,(u_j[1:-1]+bc_vector))
 
         #apply boundary cond
-        u_jp1[0] = boundary_conds[0]; u_jp1[mx] = boundary_conds[1]
+        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
 
         #update
         u_j[:] = u_jp1[:]
@@ -69,7 +84,7 @@ def backward(lmbda,mx,mt,u_j,boundary_conds):
     u_T = u_j
     return u_T
 
-def central(lmbda,mx,mt,u_j,boundary_conds):
+def central(lmbda,mx,mt,deltat,u_j,boundary_conds):
     '''
     A function that implements the matrix form of the Crank-Nicholson
     method to solve pdes numerically.
@@ -134,6 +149,11 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
     print("deltat=",deltat)
     print("lambda=",lmbda)
 
+    for i in range(len(boundary_conds)):
+        if isinstance(boundary_conds[i],float):
+            val = boundary_conds[i]
+            boundary_conds[i] = lambda t : val
+
     #check that program will run
     if method == 'forward' and lmbda > 0.5:
         print('Error forward difference is only stable if lambda is less than 0.5')
@@ -149,15 +169,15 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     if method == 'forward':
         # Define diagonal matrix for forwards
-        u_T = forward(lmbda,mx,mt,u_j,boundary_conds)
+        u_T = forward(lmbda,mx,mt,deltat,u_j,boundary_conds)
 
     if method == 'backward':
         # Define diagonal matrix for backwards
-        u_T = backward(lmbda,mx,mt,u_j,boundary_conds)
+        u_T = backward(lmbda,mx,mt,deltat,u_j,boundary_conds)
 
     if method == 'crank':
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,mx,mt,u_j,boundary_conds)
+        u_T = central(lmbda,mx,mt,deltat,u_j,boundary_conds)
 
     if u_exact != 0:
         error = find_error_with_true(u_T,u_exact(x,T,params))

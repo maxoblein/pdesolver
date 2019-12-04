@@ -13,6 +13,12 @@ def u_exact(x,t,params):
     y = np.exp(-kappa*(pi**2/L**2)*t)*np.sin(pi*x/L)
     return y
 
-u_T,diagnostics = Finite_Difference('crank',initial_cond,[0,0],10,1000,(1.0,1.0,0.5))
+def lhs(t):
+    return t**2
 
-error_plot_vary_mt('backward',initial_cond,[0,0],10,(1.0,1.0,0.5))
+def rhs(t):
+    return -2*t
+
+u_T,diagnostics = Finite_Difference('backward',initial_cond,[lhs,rhs],10,1000,(1.0,1.0,0.5),plot=True)
+
+#error_plot_vary_mt('backward',initial_cond,[0,0],10,(1.0,1.0,0.5))
