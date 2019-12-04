@@ -155,7 +155,7 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
     print("lambda=",lmbda)
 
     for i in range(len(boundary_conds)):
-        if isinstance(boundary_conds[i],float):
+        if isinstance(boundary_conds[i],float) or isinstance(boundary_conds[i],int):
             val = boundary_conds[i]
             boundary_conds[i] = lambda t : val
 
