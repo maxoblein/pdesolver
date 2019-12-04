@@ -105,12 +105,17 @@ def central(lmbda,mx,mt,deltat,u_j,boundary_conds):
     B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
     u_jp1 = np.zeros(u_j.size)      # u at next time step
 
+    #for dirichlet boundary_conds
+    bc_vector = np.zeros(mx-1)
+
     for n in range(1, mt+1):
+        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
         # solve up to end of time period
-        u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1]))
+        u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1]+bc_vector))
 
         #apply boundary cond
-        u_jp1[0] = boundary_conds[0]; u_jp1[mx] = boundary_conds[1]
+        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
 
         #update
         u_j[:] = u_jp1[:]
