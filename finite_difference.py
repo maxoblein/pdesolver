@@ -4,7 +4,7 @@ from math import pi
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
-def forward(lmbda,mx,mt,deltat,u_j,boundary_conds):
+def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     '''
     A function that implements the matrix form of the forward difference
     method to solve pdes numerically.
@@ -17,35 +17,54 @@ def forward(lmbda,mx,mt,deltat,u_j,boundary_conds):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-    # Define diagonal matrix for forwards
-    upper = (lmbda) * np.ones(mx-2)
-    lower = upper
-    diag = (1-2*lmbda) * np.ones(mx-1)
-    A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-    u_jp1 = np.zeros(u_j.size)      # u at next time step
+    if b_type == 'dirichlet':
+        # Define diagonal matrix for forwards dirichlet
+        upper = (lmbda) * np.ones(mx-2)
+        lower = upper
+        diag = (1-2*lmbda) * np.ones(mx-1)
+        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
 
 
-    #Loop below for constant dirichlet boundary_conds
-    bc_vector = np.zeros(mx-1)
+        #Loop below for constant dirichlet boundary_conds
+        bc_vector = np.zeros(mx-1)
 
-    for n in range(1, mt+1):
-        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-        # solve up to end of time period
-        u_jp1[1:-1] = A.dot(u_j[1:-1]) + bc_vector
+        for n in range(1, mt+1):
+            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1[1:-1] = A.dot(u_j[1:-1]) + bc_vector
 
-        #apply boundary cond
-        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+            #apply boundary cond
+            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
 
-        #update
-        u_j[:] = u_jp1[:]
+            #update
+            u_j[:] = u_jp1[:]
 
+    if b_type == 'neumann':
+        # DEfine diagonal matrix for forward neumann
+        upper = (lmbda) * np.ones(mx)
+        lower = upper
+        upper[0] = upper[0] * 2; lower[-1] = lower[-1] * 2
+        diag = (1-2*lmbda) * np.ones(mx+1)
+        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
 
+        bc_vector = np.zeros(mx+1)
+
+        for n in range(1, mt+1):
+            bc_vector[0] = (-2*lmbda*deltax) * boundary_conds[0](deltat*n)
+            bc_vector[-1] = (2*lmbda*deltax) * boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1 = A.dot(u_j) + bc_vector
+
+            #update
+            u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
 
-def backward(lmbda,mx,mt,deltat,u_j,boundary_conds):
+def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     '''
     A function that implements the matrix form of the backward difference
     method to solve pdes numerically.
@@ -84,7 +103,7 @@ def backward(lmbda,mx,mt,deltat,u_j,boundary_conds):
     u_T = u_j
     return u_T
 
-def central(lmbda,mx,mt,deltat,u_j,boundary_conds):
+def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     '''
     A function that implements the matrix form of the Crank-Nicholson
     method to solve pdes numerically.
@@ -127,7 +146,7 @@ def find_error_with_true(u_T_approx,u_T_exact):
     return np.sqrt(np.sum((u_T_exact - u_T_approx)**2))
 
 
-def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 0,plot = False):
+def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = 'dirichlet',u_exact = 0,plot = False):
     '''
     Function that implements the finite difference method
     for solving pdes numerically.
@@ -159,6 +178,8 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
             val = boundary_conds[i]
             boundary_conds[i] = lambda t : val
 
+
+
     #check that program will run
     if method == 'forward' and lmbda > 0.5:
         print('Error forward difference is only stable if lambda is less than 0.5')
@@ -174,15 +195,15 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = 
 
     if method == 'forward':
         # Define diagonal matrix for forwards
-        u_T = forward(lmbda,mx,mt,deltat,u_j,boundary_conds)
+        u_T = forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
 
     if method == 'backward':
         # Define diagonal matrix for backwards
-        u_T = backward(lmbda,mx,mt,deltat,u_j,boundary_conds)
+        u_T = backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
 
     if method == 'crank':
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,mx,mt,deltat,u_j,boundary_conds)
+        u_T = central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
 
     if u_exact != 0:
         error = find_error_with_true(u_T,u_exact(x,T,params))
@@ -217,11 +238,12 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
     deltat_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,12):
-            mt = 2**n
+        for n in range(10,17):
+            mt = 2*n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             deltat_list.append(diagnostics[2])
             error_list.append(diagnostics[0])
+            print(diagnostics[0])
         pl.loglog(deltat_list,error_list)
 
 
@@ -235,7 +257,7 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
         for i in range(len(u_T_list)-1):
             error_list.append(np.sqrt(np.sum((u_T_list[i+1] - u_T_list[i])**2)))
         pl.loglog(deltat_list[:-1],error_list)
-    pl.xlabel('Number of gridpoints in time')
+    pl.xlabel(r'$\Delta t$')
     pl.ylabel('Error between finite difference and exact solution')
     pl.show()
     return True
@@ -274,7 +296,7 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
             len_next = len(u_T_list[i+1])
             error_list.append(np.sqrt((u_T_list[i+1][int(np.round(len_next/2))])-(u_T_list[i][int(np.round(len_now/2))])**2))
         pl.loglog(deltax_list[:-1],error_list)
-    pl.xlabel('Number of gridpoints in space')
+    pl.xlabel(r'\Delta x')
     pl.ylabel('Error between finite difference and exact solution')
     pl.show()
     return True
