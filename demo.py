@@ -19,6 +19,6 @@ def lhs(t):
 def rhs(t):
     return -2*t
 
-u_T,diagnostics = Finite_Difference('forward',initial_cond,[0,0.5],10,1000,(1.0,1.0,0.5),b_type = 'neumann',plot = True)
+u_T,diagnostics = Finite_Difference('forward',initial_cond,[0,0],10,1000,(1.0,1.0,0.5),b_type = 'neumann',plot = True)
 
 #error_plot_vary_mt('crank',initial_cond,[0,0],10,(1.0,1.0,0.5),u_exact=u_exact)

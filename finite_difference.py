@@ -44,7 +44,7 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     if b_type == 'neumann':
         # DEfine diagonal matrix for forward neumann
         upper = (lmbda) * np.ones(mx)
-        lower = upper
+        lower = np.copy(upper)
         upper[0] = upper[0] * 2; lower[-1] = lower[-1] * 2
         diag = (1-2*lmbda) * np.ones(mx+1)
         A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
@@ -53,10 +53,10 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
         bc_vector = np.zeros(mx+1)
 
         for n in range(1, mt+1):
-            bc_vector[0] = (-2*lmbda*deltax) * boundary_conds[0](deltat*n)
-            bc_vector[-1] = (2*lmbda*deltax) * boundary_conds[1](deltat*n)
+            bc_vector[0] = -boundary_conds[0](deltat*n)
+            bc_vector[-1] =  boundary_conds[1](deltat*n)
             # solve up to end of time period
-            u_jp1 = A.dot(u_j) + bc_vector
+            u_jp1 = A.dot(u_j) + (2*lmbda*deltax)*bc_vector
 
             #update
             u_j[:] = u_jp1[:]
@@ -77,28 +77,49 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-    # Define diagonal matrix for backwards
-    upper = (-lmbda) * np.ones(mx-2)
-    lower = upper
-    diag = (1+2*lmbda) * np.ones(mx-1)
-    A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-    u_jp1 = np.zeros(u_j.size)      # u at next time step
+    if b_type == 'dirichlet':
+        # Define diagonal matrix for backwards
+        upper = (-lmbda) * np.ones(mx-2)
+        lower = upper
+        diag = (1+2*lmbda) * np.ones(mx-1)
+        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
 
-    #for dirichlet boundary_conds
-    bc_vector = np.zeros(mx-1)
+        #for dirichlet boundary_conds
+        bc_vector = np.zeros(mx-1)
 
 
-    for n in range(1, mt+1):
-        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-        # solve up to end of time period
-        u_jp1[1:-1] = spsolve(A,(u_j[1:-1]+bc_vector))
+        for n in range(1, mt+1):
+            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1[1:-1] = spsolve(A,(u_j[1:-1]+bc_vector))
 
-        #apply boundary cond
-        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+            #apply boundary cond
+            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
 
-        #update
-        u_j[:] = u_jp1[:]
+            #update
+            u_j[:] = u_jp1[:]
+
+    if b_type == 'neumann':
+        # DEfine diagonal matrix for forward neumann
+        upper = (-lmbda) * np.ones(mx)
+        lower = np.copy(upper)
+        upper[0] = upper[0] * 2; lower[-1] = lower[-1] * 2
+        diag = (1+2*lmbda) * np.ones(mx+1)
+        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
+        print(A.toarray())
+        bc_vector = np.zeros(mx+1)
+
+        for n in range(1, mt+1):
+            bc_vector[0] =  -boundary_conds[0](deltat*n)
+            bc_vector[-1] = boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1 = spsolve(A,u_j + (2*lmbda*deltax)*bc_vector)
+
+            #update
+            u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
@@ -116,28 +137,53 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-    upper = (lmbda/2) * np.ones(mx-2)
-    lower = upper
-    Adiag = (1+lmbda) * np.ones(mx-1)
-    Bdiag = (1-lmbda) * np.ones(mx-1)
-    A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
-    B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
-    u_jp1 = np.zeros(u_j.size)      # u at next time step
 
-    #for dirichlet boundary_conds
-    bc_vector = np.zeros(mx-1)
+    if b_type == 'dirichlet':
+        upper = (lmbda/2) * np.ones(mx-2)
+        lower = upper
+        Adiag = (1+lmbda) * np.ones(mx-1)
+        Bdiag = (1-lmbda) * np.ones(mx-1)
+        A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
+        B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
 
-    for n in range(1, mt+1):
-        bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-        bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-        # solve up to end of time period
-        u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1]+bc_vector))
+        #for dirichlet boundary_conds
+        bc_vector = np.zeros(mx-1)
 
-        #apply boundary cond
-        u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+        for n in range(1, mt+1):
+            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
+            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1]+bc_vector))
 
-        #update
-        u_j[:] = u_jp1[:]
+            #apply boundary cond
+            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+
+            #update
+            u_j[:] = u_jp1[:]
+
+    if b_type == 'neumann':
+        # DEfine diagonal matrix for forward neumann
+        upper = (lmbda/2) * np.ones(mx)
+        lower = np.copy(upper)
+        upper[0] = 2*upper[0]; lower[-1] = 2*lower[-1]
+        Adiag = (1+lmbda) * np.ones(mx+1)
+        Bdiag = (1-lmbda) * np.ones(mx+1)
+        A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
+        B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
+
+        u_jp1 = np.zeros(u_j.size)      # u at next time step
+
+        bc_vector = np.zeros(mx+1)
+
+        for n in range(1, mt+1):
+            bc_vector[0] = - boundary_conds[0](deltat*n)
+            bc_vector[-1] =  boundary_conds[1](deltat*n)
+            # solve up to end of time period
+            u_jp1 = spsolve(A,B.dot(u_j + (2*lmbda*deltax)*bc_vector))
+
+            #update
+            u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
