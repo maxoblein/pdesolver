@@ -189,7 +189,8 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     return u_T
 
 def find_error_with_true(u_T_approx,u_T_exact):
-    return np.sqrt(np.sum((u_T_exact - u_T_approx)**2))
+    #return np.sqrt(np.sum((u_T_exact - u_T_approx)**2))
+    return np.linalg.norm(u_T_exact - u_T_approx)
 
 
 def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = 'dirichlet',u_exact = 0,plot = False):
@@ -251,11 +252,6 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = '
         # define diagonal matrices for crank nicholson
         u_T = central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
 
-    if u_exact != 0:
-        error = find_error_with_true(u_T,u_exact(x,T,params))
-
-    if u_exact == 0:
-        error = 0
 
     if plot == True:
         pl.plot(x,u_j,'ro',label='num')
@@ -267,7 +263,7 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = '
         pl.legend(loc='upper right')
         pl.show()
 
-    diagnostics = [error,deltax,deltat,lmbda]
+    diagnostics = [deltax,deltat,lmbda]
     return u_T,diagnostics
 
 def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0):
@@ -284,20 +280,20 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
     deltat_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(10,17):
-            mt = 2*n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
-            deltat_list.append(diagnostics[2])
-            error_list.append(diagnostics[0])
-            print(diagnostics[0])
+        for n in range(1,15):
+            mt = 2**n
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params)
+            u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
+            deltat_list.append(diagnostics[1])
+            error_list.append(find_error_with_true(u_T,u_T_exact))
         pl.loglog(deltat_list,error_list)
 
 
     else:
         u_T_list = []
-        for n in range(1,12):
+        for n in range(1,15):
             mt = 2**n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params)
             u_T_list.append(u_T)
             deltat_list.append(diagnostics[2])
         for i in range(len(u_T_list)-1):
@@ -322,17 +318,19 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
     deltax_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,12):
+        for n in range(1,15):
             mx = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
-            deltax_list.append(diagnostics[1])
-            error_list.append(diagnostics[0])
+            u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
+            deltax_list.append(diagnostics[0])
+            error_list.append(find_error_with_true(u_T,u_T_exact))
+
         pl.loglog(deltax_list,error_list)
 
 
     else:
         u_T_list = []
-        for n in range(1,12):
+        for n in range(1,15):
             mx = 2**n
             u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
             u_T_list.append(u_T)
