@@ -27,8 +27,18 @@ def matrix_init(mx,diag_mul,sub_mul,b_type):
     bc_vector = np.zeros(size)
     return Mat, bc_vector
 
+def update_step(method,A,B,u_j,bc_vector):
+    if method == 'forward':
+        return A.dot(u_j) + bc_vector
 
-def forward(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,bc_vector):
+    if method == 'backward':
+        return spsolve(A,u_j + bc_vector)
+
+    if method == 'crank':
+        return spsolve(A,B.dot(u_j + bc_vector))
+
+
+def solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
     '''
     A function that implements the matrix form of the forward difference
     method to solve pdes numerically.
@@ -46,110 +56,24 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,bc_vector):
         if b_type == [0,0]:
             bc_vector[0] = lmbda * bc[0](n*deltat)
             bc_vector[-1] = lmbda * bc[1](n*deltat)
-            u_jp1[1:-1] = A.dot(u_j[1:-1]) + bc_vector
+            u_jp1[1:-1] = update_step(method,A,B,u_j[1:-1],bc_vector)
             u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
 
         if b_type == [1,1]:
             bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
             bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1 = A.dot(u_j) + bc_vector
+            u_jp1 = update_step(method,A,B,u_j,bc_vector)
 
         if b_type == [0,1]:
             bc_vector[0] = lmbda * bc[0](n*deltat)
             bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1[1:] = A.dot(u_j[1:]) + bc_vector
+            u_jp1[1:] = update_step(method,A,B,u_j[1:],bc_vector)
             u_jp1[0] = bc[0](n*deltat)
 
         if b_type == [1,0]:
             bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
             bc_vector[-1] = lmbda* bc[1](n*deltat)
-            u_jp1[:-1] = A.dot(u_j[:-1]) + bc_vector
-            u_jp1[-1] = bc[1](n*deltat)
-
-        u_j[:] = u_jp1[:]
-
-    u_T = u_j
-    return u_T
-
-def backward(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,bc_vector):
-    '''
-    A function that implements the matrix form of the backward difference
-    method to solve pdes numerically.
-
-    Inputs: -lmbda: The mesh fourier number for the system (float)
-            -mx: The number of gridpoints in space (float)
-            -mt: The number of gridpoints in time (float)
-            -u_j: The initial condition vector U(x,0) (ndarray)
-            -boundary_conds: The conditions at U(0,t) and U(L,t)
-
-    Output: -u_T: The solution to the pde at U(x,T) (ndarray)
-    '''
-    u_jp1 = np.zeros(u_j.size)
-    for n in range(1,mt+1):
-        if b_type == [0,0]:
-            bc_vector[0] = lmbda * bc[0](n*deltat)
-            bc_vector[-1] = lmbda * bc[1](n*deltat)
-            u_jp1[1:-1] = spsolve(A,u_j[1:-1] + bc_vector)
-            u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
-
-        if b_type == [1,1]:
-            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
-            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1 = spsolve(A,u_j + bc_vector)
-
-        if b_type == [0,1]:
-            bc_vector[0] = lmbda * bc[0](n*deltat)
-            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1[1:] = spsolve(A,u_j[1:] + bc_vector)
-            u_jp1[0] = bc[0](n*deltat)
-
-        if b_type == [1,0]:
-            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
-            bc_vector[-1] = lmbda* bc[1](n*deltat)
-            u_jp1[:-1] = spsolve(A,u_j[:-1] + bc_vector)
-            u_jp1[-1] = bc[1](n*deltat)
-
-        u_j[:] = u_jp1[:]
-
-    u_T = u_j
-    return u_T
-
-def central(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
-    '''
-    A function that implements the matrix form of the Crank-Nicholson
-    method to solve pdes numerically.
-
-    Inputs: -lmbda: The mesh fourier number for the system (float)
-            -mx: The number of gridpoints in space (float)
-            -mt: The number of gridpoints in time (float)
-            -u_j: The initial condition vector U(x,0) (ndarray)
-            -boundary_conds: The conditions at U(0,t) and U(L,t)
-
-    Output: -u_T: The solution to the pde at U(x,T) (ndarray)
-    '''
-    u_jp1 = np.zeros(u_j.size)
-    for n in range(1,mt+1):
-        if b_type == [0,0]:
-            bc_vector[0] = lmbda * bc[0](n*deltat)
-            bc_vector[-1] = lmbda * bc[1](n*deltat)
-            u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1] + bc_vector))
-            u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
-
-        if b_type == [1,1]:
-            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
-            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1 = spsolve(A,B.dot(u_j + bc_vector))
-
-        if b_type == [0,1]:
-            bc_vector[0] = lmbda * bc[0](n*deltat)
-            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
-            u_jp1[1:] = spsolve(A,B.dot(u_j[1:] + bc_vector))
-            u_jp1[0] = bc[0](n*deltat)
-
-        if b_type == [1,0]:
-            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
-            bc_vector[-1] = lmbda* bc[1](n*deltat)
-            u_jp1[:-1] = spsolve(A,B.dot(u_j[:-1] + bc_vector))
+            u_jp1[:-1] = update_step(method,A,B,u_j[:-1],bc_vector)
             u_jp1[-1] = bc[1](n*deltat)
 
         u_j[:] = u_jp1[:]
@@ -162,7 +86,7 @@ def find_error_with_true(u_T_approx,u_T_exact):
     return np.linalg.norm(u_T_exact - u_T_approx)
 
 
-def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = 'dirichlet',u_exact = 0,plot = False):
+def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = 'dirichlet',u_exact = 0,plot = False):
     '''
     Function that implements the finite difference method
     for solving pdes numerically.
@@ -189,10 +113,10 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = '
     print("deltat=",deltat)
     print("lambda=",lmbda)
 
-    for i in range(len(boundary_conds)):
-        if isinstance(boundary_conds[i],float) or isinstance(boundary_conds[i],int):
-            val = boundary_conds[i]
-            boundary_conds[i] = lambda t : val
+    for i in range(len(bc)):
+        if isinstance(bc[i],float) or isinstance(bc[i],int):
+            val = bc[i]
+            bc[i] = lambda t : val
 
 
 
@@ -212,19 +136,19 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = '
     if method == 'forward':
         # Define diagonal matrix for forwards
         A,bc_vector = matrix_init(mx,(1-2*lmbda),lmbda,b_type)
-        u_T = forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector)
+        B = None
 
     if method == 'backward':
         # Define diagonal matrix for backwards
         A,bc_vector = matrix_init(mx,(1+2*lmbda),-lmbda,b_type)
-        u_T = backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector)
+        B = None
 
     if method == 'crank':
         A,bc_vector = matrix_init(mx,(1+lmbda),(-lmbda/2),b_type)
         B,bc_vector = matrix_init(mx,(1-lmbda),(lmbda/2),b_type)
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,B,bc_vector)
 
+    u_T = solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector)
 
     if plot == True:
         pl.plot(x,u_j,'ro',label='num')
