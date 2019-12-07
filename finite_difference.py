@@ -28,7 +28,7 @@ def matrix_init(mx,diag_mul,sub_mul,b_type):
     return Mat, bc_vector
 
 
-def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
+def forward(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,bc_vector):
     '''
     A function that implements the matrix form of the forward difference
     method to solve pdes numerically.
@@ -42,35 +42,36 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
     u_jp1 = np.zeros(u_j.size)
-    if b_type == [0,0]:
-
-        for n in range(1, mt+1):
-            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-            # solve up to end of time period
+    for n in range(1,mt+1):
+        if b_type == [0,0]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = lmbda * bc[1](n*deltat)
             u_jp1[1:-1] = A.dot(u_j[1:-1]) + bc_vector
+            u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
 
-            #apply boundary cond
-            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+        if b_type == [1,1]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1 = A.dot(u_j) + bc_vector
 
-            #update
-            u_j[:] = u_jp1[:]
+        if b_type == [0,1]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1[1:] = A.dot(u_j[1:]) + bc_vector
+            u_jp1[0] = bc[0](n*deltat)
 
-    if b_type == [1,1]:
+        if b_type == [1,0]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = lmbda* bc[1](n*deltat)
+            u_jp1[:-1] = A.dot(u_j[:-1]) + bc_vector
+            u_jp1[-1] = bc[1](n*deltat)
 
-        for n in range(1, mt+1):
-            bc_vector[0] = -boundary_conds[0](deltat*n)
-            bc_vector[-1] =  boundary_conds[1](deltat*n)
-            # solve up to end of time period
-            u_jp1 = A.dot(u_j) + (2*lmbda*deltax)*bc_vector
-
-            #update
-            u_j[:] = u_jp1[:]
+        u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
 
-def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
+def backward(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,bc_vector):
     '''
     A function that implements the matrix form of the backward difference
     method to solve pdes numerically.
@@ -84,35 +85,36 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
     u_jp1 = np.zeros(u_j.size)
-    if b_type == [0,0]:
+    for n in range(1,mt+1):
+        if b_type == [0,0]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = lmbda * bc[1](n*deltat)
+            u_jp1[1:-1] = spsolve(A,u_j[1:-1] + bc_vector)
+            u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
 
-        for n in range(1, mt+1):
-            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-            # solve up to end of time period
-            u_jp1[1:-1] = spsolve(A,(u_j[1:-1]+bc_vector))
+        if b_type == [1,1]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1 = spsolve(A,u_j + bc_vector)
 
-            #apply boundary cond
-            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+        if b_type == [0,1]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1[1:] = spsolve(A,u_j[1:] + bc_vector)
+            u_jp1[0] = bc[0](n*deltat)
 
-            #update
-            u_j[:] = u_jp1[:]
+        if b_type == [1,0]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = lmbda* bc[1](n*deltat)
+            u_jp1[:-1] = spsolve(A,u_j[:-1] + bc_vector)
+            u_jp1[-1] = bc[1](n*deltat)
 
-    if b_type == [1,1]:
-
-        for n in range(1, mt+1):
-            bc_vector[0] =  -boundary_conds[0](deltat*n)
-            bc_vector[-1] = boundary_conds[1](deltat*n)
-            # solve up to end of time period
-            u_jp1 = spsolve(A,u_j + (2*lmbda*deltax)*bc_vector)
-
-            #update
-            u_j[:] = u_jp1[:]
+        u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
 
-def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,B,bc_vector):
+def central(lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
     '''
     A function that implements the matrix form of the Crank-Nicholson
     method to solve pdes numerically.
@@ -126,31 +128,31 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,B,bc_vector):
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
     u_jp1 = np.zeros(u_j.size)
-    if b_type == [0,0]:
+    for n in range(1,mt+1):
+        if b_type == [0,0]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = lmbda * bc[1](n*deltat)
+            u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1] + bc_vector))
+            u_jp1[0] = bc[0](n*deltat); u_jp1[-1] = bc[1](n*deltat)
 
+        if b_type == [1,1]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1 = spsolve(A,B.dot(u_j + bc_vector))
 
-        for n in range(1, mt+1):
-            bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
-            bc_vector[-1] = lmbda*boundary_conds[1](deltat*n)
-            # solve up to end of time period
-            u_jp1[1:-1] = spsolve(A,B.dot(u_j[1:-1]+bc_vector))
+        if b_type == [0,1]:
+            bc_vector[0] = lmbda * bc[0](n*deltat)
+            bc_vector[-1] = 2*lmbda*deltax * bc[1](n*deltat)
+            u_jp1[1:] = spsolve(A,B.dot(u_j[1:] + bc_vector))
+            u_jp1[0] = bc[0](n*deltat)
 
-            #apply boundary cond
-            u_jp1[0] = boundary_conds[0](deltat*n); u_jp1[mx] = boundary_conds[1](deltat*n)
+        if b_type == [1,0]:
+            bc_vector[0] = 2*lmbda*deltax * bc[0](n*deltat)
+            bc_vector[-1] = lmbda* bc[1](n*deltat)
+            u_jp1[:-1] = spsolve(A,B.dot(u_j[:-1] + bc_vector))
+            u_jp1[-1] = bc[1](n*deltat)
 
-            #update
-            u_j[:] = u_jp1[:]
-
-    if b_type == [1,1]:
-
-        for n in range(1, mt+1):
-            bc_vector[0] = - boundary_conds[0](deltat*n)
-            bc_vector[-1] =  boundary_conds[1](deltat*n)
-            # solve up to end of time period
-            u_jp1 = spsolve(A,B.dot(u_j + (2*lmbda*deltax)*bc_vector))
-
-            #update
-            u_j[:] = u_jp1[:]
+        u_j[:] = u_jp1[:]
 
     u_T = u_j
     return u_T
