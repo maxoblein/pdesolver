@@ -28,7 +28,7 @@ def matrix_init(mx,diag_mul,sub_mul,b_type):
     return Mat, bc_vector
 
 
-def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
+def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
     '''
     A function that implements the matrix form of the forward difference
     method to solve pdes numerically.
@@ -41,17 +41,8 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
+    u_jp1 = np.zeros(u_j.size)
     if b_type == [0,0]:
-        # Define diagonal matrix for forwards dirichlet
-        upper = (lmbda) * np.ones(mx-2)
-        lower = upper
-        diag = (1-2*lmbda) * np.ones(mx-1)
-        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
-
-
-        #Loop below for constant dirichlet boundary_conds
-        bc_vector = np.zeros(mx-1)
 
         for n in range(1, mt+1):
             bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
@@ -66,15 +57,6 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             u_j[:] = u_jp1[:]
 
     if b_type == [1,1]:
-        # DEfine diagonal matrix for forward neumann
-        upper = (lmbda) * np.ones(mx)
-        lower = np.copy(upper)
-        upper[0] = upper[0] * 2; lower[-1] = lower[-1] * 2
-        diag = (1-2*lmbda) * np.ones(mx+1)
-        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
-
-        bc_vector = np.zeros(mx+1)
 
         for n in range(1, mt+1):
             bc_vector[0] = -boundary_conds[0](deltat*n)
@@ -88,7 +70,7 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     u_T = u_j
     return u_T
 
-def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
+def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector):
     '''
     A function that implements the matrix form of the backward difference
     method to solve pdes numerically.
@@ -101,17 +83,8 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
+    u_jp1 = np.zeros(u_j.size)
     if b_type == [0,0]:
-        # Define diagonal matrix for backwards
-        upper = (-lmbda) * np.ones(mx-2)
-        lower = upper
-        diag = (1+2*lmbda) * np.ones(mx-1)
-        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
-
-        #for dirichlet boundary_conds
-        bc_vector = np.zeros(mx-1)
-
 
         for n in range(1, mt+1):
             bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
@@ -126,15 +99,6 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             u_j[:] = u_jp1[:]
 
     if b_type == [1,1]:
-        # DEfine diagonal matrix for forward neumann
-        upper = (-lmbda) * np.ones(mx)
-        lower = np.copy(upper)
-        upper[0] = upper[0] * 2; lower[-1] = lower[-1] * 2
-        diag = (1+2*lmbda) * np.ones(mx+1)
-        A = sparse.diags([upper,diag,lower],[1,0,-1],format = 'csc')
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
-        print(A.toarray())
-        bc_vector = np.zeros(mx+1)
 
         for n in range(1, mt+1):
             bc_vector[0] =  -boundary_conds[0](deltat*n)
@@ -148,7 +112,7 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     u_T = u_j
     return u_T
 
-def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
+def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,B,bc_vector):
     '''
     A function that implements the matrix form of the Crank-Nicholson
     method to solve pdes numerically.
@@ -161,18 +125,9 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-
+    u_jp1 = np.zeros(u_j.size)
     if b_type == [0,0]:
-        upper = (lmbda/2) * np.ones(mx-2)
-        lower = upper
-        Adiag = (1+lmbda) * np.ones(mx-1)
-        Bdiag = (1-lmbda) * np.ones(mx-1)
-        A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
-        B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
 
-        #for dirichlet boundary_conds
-        bc_vector = np.zeros(mx-1)
 
         for n in range(1, mt+1):
             bc_vector[0] = lmbda*boundary_conds[0](deltat*n)
@@ -187,18 +142,6 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             u_j[:] = u_jp1[:]
 
     if b_type == [1,1]:
-        # DEfine diagonal matrix for forward neumann
-        upper = (lmbda/2) * np.ones(mx)
-        lower = np.copy(upper)
-        upper[0] = 2*upper[0]; lower[-1] = 2*lower[-1]
-        Adiag = (1+lmbda) * np.ones(mx+1)
-        Bdiag = (1-lmbda) * np.ones(mx+1)
-        A = sparse.diags([-1*upper,Adiag,-1*lower],[1,0,-1],format = 'csc')
-        B = sparse.diags([upper,Bdiag,lower],[1,0,-1],format = 'csc')
-
-        u_jp1 = np.zeros(u_j.size)      # u at next time step
-
-        bc_vector = np.zeros(mx+1)
 
         for n in range(1, mt+1):
             bc_vector[0] = - boundary_conds[0](deltat*n)
@@ -266,15 +209,19 @@ def Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = '
 
     if method == 'forward':
         # Define diagonal matrix for forwards
-        u_T = forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
+        A,bc_vector = matrix_init(mx,(1-2*lmbda),lmbda,b_type)
+        u_T = forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector)
 
     if method == 'backward':
         # Define diagonal matrix for backwards
-        u_T = backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
+        A,bc_vector = matrix_init(mx,(1+2*lmbda),-lmbda,b_type)
+        u_T = backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,bc_vector)
 
     if method == 'crank':
+        A,bc_vector = matrix_init(mx,(1+lmbda),(-lmbda/2),b_type)
+        B,bc_vector = matrix_init(mx,(1-lmbda),(lmbda/2),b_type)
         # define diagonal matrices for crank nicholson
-        u_T = central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type)
+        u_T = central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type,A,B,bc_vector)
 
 
     if plot == True:
