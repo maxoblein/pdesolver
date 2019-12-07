@@ -4,6 +4,30 @@ from math import pi
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
+def matrix_init(mx,diag_mul,sub_mul,b_type):
+    if b_type[0] == 0 and b_type[1] == 0:
+        size = mx-1
+        multiplier = [1,1]
+    if b_type[0] == 1 and b_type[1] == 1:
+        size = mx+1
+        multiplier = [2,2]
+    if b_type[0] != b_type[1]:
+        size = mx
+        if b_type[0] == 1:
+            multiplier = [2,1]
+        else:
+            multiplier = [1,2]
+
+    diag = diag_mul * np.ones(size)
+    sub_diag = sub_mul * np.ones(size-1)
+    sup_diag = np.copy(sub_diag)
+    sup_diag[0] = sup_diag[0] * multiplier[0]
+    sub_diag[-1] = sub_diag[-1] * multiplier[1]
+    Mat = sparse.diags([sup_diag,diag,sub_diag],[1,0,-1],format = 'csc')
+    bc_vector = np.zeros(size)
+    return Mat, bc_vector
+
+
 def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     '''
     A function that implements the matrix form of the forward difference
@@ -17,7 +41,7 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-    if b_type == 'dirichlet':
+    if b_type == [0,0]:
         # Define diagonal matrix for forwards dirichlet
         upper = (lmbda) * np.ones(mx-2)
         lower = upper
@@ -41,7 +65,7 @@ def forward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             #update
             u_j[:] = u_jp1[:]
 
-    if b_type == 'neumann':
+    if b_type == [1,1]:
         # DEfine diagonal matrix for forward neumann
         upper = (lmbda) * np.ones(mx)
         lower = np.copy(upper)
@@ -77,7 +101,7 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
-    if b_type == 'dirichlet':
+    if b_type == [0,0]:
         # Define diagonal matrix for backwards
         upper = (-lmbda) * np.ones(mx-2)
         lower = upper
@@ -101,7 +125,7 @@ def backward(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             #update
             u_j[:] = u_jp1[:]
 
-    if b_type == 'neumann':
+    if b_type == [1,1]:
         # DEfine diagonal matrix for forward neumann
         upper = (-lmbda) * np.ones(mx)
         lower = np.copy(upper)
@@ -138,7 +162,7 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
 
-    if b_type == 'dirichlet':
+    if b_type == [0,0]:
         upper = (lmbda/2) * np.ones(mx-2)
         lower = upper
         Adiag = (1+lmbda) * np.ones(mx-1)
@@ -162,7 +186,7 @@ def central(lmbda,mx,mt,deltat,deltax,u_j,boundary_conds,b_type):
             #update
             u_j[:] = u_jp1[:]
 
-    if b_type == 'neumann':
+    if b_type == [1,1]:
         # DEfine diagonal matrix for forward neumann
         upper = (lmbda/2) * np.ones(mx)
         lower = np.copy(upper)
