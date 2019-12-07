@@ -40,14 +40,15 @@ def update_step(method,A,B,u_j,bc_vector):
 
 def solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
     '''
-    A function that implements the matrix form of the forward difference
-    method to solve pdes numerically.
+    A function that implements the matrix form
+     to solve pdes numerically.
 
-    Inputs: -lmbda: The mesh fourier number for the system (float)
+    Inputs: -method: finite difference method to be used
+            -lmbda: The mesh fourier number for the system (float)
             -mx: The number of gridpoints in space (float)
             -mt: The number of gridpoints in time (float)
             -u_j: The initial condition vector U(x,0) (ndarray)
-            -boundary_conds: The conditions at U(0,t) and U(L,t)
+            -bc: The conditions at U(0,t) and U(L,t)
 
     Output: -u_T: The solution to the pde at U(x,T) (ndarray)
     '''
