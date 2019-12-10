@@ -87,7 +87,7 @@ def find_error_with_true(u_T_approx,u_T_exact):
     return np.linalg.norm(u_T_exact - u_T_approx)
 
 
-def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = 'dirichlet',u_exact = 0,plot = False):
+def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = [0,0],u_exact = 0,plot = False):
     '''
     Function that implements the finite difference method
     for solving pdes numerically.
@@ -164,7 +164,7 @@ def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = 'dirichlet',u
     diagnostics = [deltax,deltat,lmbda]
     return u_T,diagnostics
 
-def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0):
+def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
     '''
     Function to plot a loglog error plot given a static mx and varying mt
 
@@ -178,9 +178,10 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
     deltat_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,15):
+        for n in range(3,15):
             mt = 2**n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params)
+            u_T,diagnostics = Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = [0,0])
+
             u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
             deltat_list.append(diagnostics[1])
             error_list.append(find_error_with_true(u_T,u_T_exact))
@@ -189,13 +190,14 @@ def error_plot_vary_mt(method,initial_cond,boundary_conds,mx,params,u_exact = 0)
 
     else:
         u_T_list = []
-        for n in range(1,15):
+        for n in range(3,15):
             mt = 2**n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params)
+            u_T,diagnostics = Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = [0,0])
             u_T_list.append(u_T)
             deltat_list.append(diagnostics[2])
         for i in range(len(u_T_list)-1):
             error_list.append(np.sqrt(np.sum((u_T_list[i+1] - u_T_list[i])**2)))
+
         pl.loglog(deltat_list[:-1],error_list)
     pl.xlabel(r'$\Delta t$')
     pl.ylabel('Error between finite difference and exact solution')
