@@ -21,4 +21,4 @@ def rhs(t):
 
 #u_T,diagnostics = Finite_Difference('crank',initial_cond,[0,0],10,1000,(1.0,1.0,0.5),b_type = [1,0],plot = True)
 
-error_plot_vary_mt('backward',initial_cond,[0,0],1000,(1.0,1.0,0.5))
+error_plot_vary_mx('backward',initial_cond,[0,0],10000,(1.0,1.0,0.5))

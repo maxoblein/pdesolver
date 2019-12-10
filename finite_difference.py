@@ -84,7 +84,9 @@ def solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
 
 def find_error_with_true(u_T_approx,u_T_exact):
     #return np.sqrt(np.sum((u_T_exact - u_T_approx)**2))
-    return np.linalg.norm(u_T_exact - u_T_approx)
+    error =  np.linalg.norm(u_T_exact - u_T_approx)
+    error = error/np.size(u_T_exact)
+    return error
 
 
 def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = [0,0],u_exact = 0,plot = False):
@@ -186,6 +188,9 @@ def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
             deltat_list.append(diagnostics[1])
             error_list.append(find_error_with_true(u_T,u_T_exact))
         pl.loglog(deltat_list,error_list)
+        slope, intercept = np.polyfit(np.log(deltat_list), np.log(error_list), 1)
+        print(slope)
+        pl.title('Plot of error trends in Crank-Nicolson')
 
 
     else:
@@ -199,8 +204,11 @@ def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
             error_list.append(np.sqrt(np.sum((u_T_list[i+1] - u_T_list[i])**2)))
 
         pl.loglog(deltat_list[:-1],error_list)
+        slope, intercept = np.polyfit(np.log(deltat_list[:-1]), np.log(error_list), 1)
+        print(slope)
+        pl.title('Plot of error trends in Crank-Nicolson')
     pl.xlabel(r'$\Delta t$')
-    pl.ylabel('Error between finite difference and exact solution')
+    pl.ylabel(r'Error between finite difference at $mt$ and $2mt$')
     pl.show()
     return True
 
@@ -218,29 +226,32 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
     deltax_list = []
     error_list = []
     if u_exact != 0:
-        for n in range(1,15):
+        for n in range(3,8):
             mx = 2**n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = [0,0],u_exact = u_exact)
             u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
             deltax_list.append(diagnostics[0])
             error_list.append(find_error_with_true(u_T,u_T_exact))
+            print(find_error_with_true(u_T,u_T_exact))
+        slope, intercept = np.polyfit(np.log(deltax_list), np.log(error_list), 1)
+        print(slope)
 
         pl.loglog(deltax_list,error_list)
 
 
     else:
         u_T_list = []
-        for n in range(1,15):
+        for n in range(3,8):
             mx = 2**n
-            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,u_exact = u_exact)
+            u_T,diagnostics = Finite_Difference(method,initial_cond,boundary_conds,mx,mt,params,b_type = [0,0],u_exact = u_exact)
             u_T_list.append(u_T)
-            deltax_list.append(diagnostics[1])
+            deltax_list.append(diagnostics[0])
         for i in range(len(u_T_list)-1):
             len_now = len(u_T_list[i])
             len_next = len(u_T_list[i+1])
             error_list.append(np.sqrt((u_T_list[i+1][int(np.round(len_next/2))])-(u_T_list[i][int(np.round(len_now/2))])**2))
         pl.loglog(deltax_list[:-1],error_list)
-    pl.xlabel(r'\Delta x')
+    pl.xlabel(r'$\Delta x$')
     pl.ylabel('Error between finite difference and exact solution')
     pl.show()
     return True
