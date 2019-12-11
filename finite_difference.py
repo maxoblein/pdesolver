@@ -141,7 +141,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
             -plot: Optional boolean to display plot of numerical solution wit true sol overlayed
 
     Outputs: -u_T: solutiona at end of time domain.
-             -diagnostics: information useful for errors [deltax,deltat,lmbda]
+             -diagnostics: information useful for errors [deltax,deltat,lmbda,error between solution and one with 2 time the spacial and temporal gridpoints]
     '''
     # set up the numerical environment variables
     kappa = params[0]
@@ -175,12 +175,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
         return [1,1]
 
     # set up the solution variables
-    u_j = np.zeros(x.size)        # u at current time step
-
-
-    # Set initial condition
-    for i in range(0, mx+1):
-        u_j[i] = initial_cond(x[i],params)
+    u_j = initial_cond(x,params)
 
     if method == 'fd':
         # Define diagonal matrix for forwards
@@ -199,6 +194,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
 
     u_T = solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector)
 
+    
     if plot == True:
         pl.plot(x,u_j,'ro',label='num')
         xx = np.linspace(0,L,250)
@@ -210,7 +206,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
         #pl.legend(loc='upper right')
         pl.show()
 
-    diagnostics = [deltax,deltat,lmbda]
+    diagnostics = [deltax,deltat,lmbda,error]
     return u_T,diagnostics
 
 def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
