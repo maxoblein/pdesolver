@@ -1,5 +1,5 @@
 from finite_difference import *
-
+from errors import * 
 def initial_cond(x,params):
     # initial temperature distribution
     L = params[1]
