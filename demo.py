@@ -19,6 +19,6 @@ def lhs(t):
 def rhs(t):
     return -2*t
 
-#u_T,diagnostics = Finite_Difference('crank',initial_cond,[0,0],40,1000,(1.0,1.0,0.5),b_type = [0,0],plot = True)
+u_T,diagnostics = Finite_Difference('crank',initial_cond,[0,0],100,1000,(1.0,1.0,0.5),b_type = [1,1],plot = True)
 
-error_plot_vary_mx('backward',initial_cond,[0,0],1000,(1.0,1.0,0.5),u_exact=u_exact)
+#error_plot_vary_mx('backward',initial_cond,[0,0],1000,(1.0,1.0,0.5),u_exact=u_exact)

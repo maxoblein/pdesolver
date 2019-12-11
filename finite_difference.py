@@ -113,15 +113,18 @@ def Finite_Difference(method,initial_cond,bc,mx,mt,params,b_type = [0,0],u_exact
     deltax = x[1] - x[0]            # gridspacing in x
     deltat = t[1] - t[0]            # gridspacing in t
     lmbda = kappa*deltat/(deltax**2)    # mesh fourier number
-    print("deltax=",deltax)
-    print("deltat=",deltat)
-    print("lambda=",lmbda)
+    # print("deltax=",deltax)
+    # print("deltat=",deltat)
+    # print("lambda=",lmbda)
 
     for i in range(len(bc)):
         if isinstance(bc[i],float) or isinstance(bc[i],int):
             val = bc[i]
             bc[i] = lambda t : val
 
+    if (b_type[0] != 0  and b_type[0] != 1) or (b_type[1] != 0  and b_type[1] != 1):
+        print('Incorrect boundary condition types')
+        return [1,1]
 
 
     #check that program will run
