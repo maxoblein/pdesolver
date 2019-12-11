@@ -194,7 +194,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
 
     u_T = solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector)
 
-    
+
     if plot == True:
         pl.plot(x,u_j,'ro',label='num')
         xx = np.linspace(0,L,250)
@@ -206,7 +206,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
         #pl.legend(loc='upper right')
         pl.show()
 
-    diagnostics = [deltax,deltat,lmbda,error]
+    diagnostics = [deltax,deltat,lmbda]
     return u_T,diagnostics
 
 def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
@@ -270,12 +270,11 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
     if u_exact != 0:
         for n in range(3,15):
             mx = 2**n
-            u_T,diagnostics = Finite_Difference(initial_cond,boundary_conds,mx,mt,params,method,b_type = [0,0],u_exact = u_exact)
+            u_T,diagnostics = Finite_Difference(initial_cond,boundary_conds,mx,mt,params,method = method,b_type = [0,0],u_exact = u_exact)
             u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
             deltax_list.append(diagnostics[0])
             error = abs(trapz(u_T_exact,dx=diagnostics[0]) - trapz(u_T,dx=diagnostics[0]))
             error_list.append(error)
-            print(find_error_with_true(u_T,u_T_exact))
         slope, intercept = np.polyfit(np.log(deltax_list), np.log(error_list), 1)
         print(slope)
 
@@ -286,7 +285,7 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
         u_T_list = []
         for n in range(3,15):
             mx = 2**n
-            u_T,diagnostics = Finite_Difference(initial_cond,boundary_conds,mx,mt,params,method,b_type = [0,0],u_exact = u_exact)
+            u_T,diagnostics = Finite_Difference(initial_cond,boundary_conds,mx,mt,params,method = method,b_type = [0,0],u_exact = u_exact)
             u_T_list.append(u_T)
             deltax_list.append(diagnostics[0])
         for i in range(len(u_T_list)-1):
