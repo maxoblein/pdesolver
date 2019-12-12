@@ -21,6 +21,13 @@ def rhs(t):
     return -2*t
 
 if __name__ == '__main__':
+    '''
+    Run with commandline option 'FD' to plot a solution using crank nicolson with
+    0 dirichlet boundary conditions.
+
+    Run with commandline option 'Errors' to plot the error trend for backwards
+    difference with an exact solution.
+    '''
     option = sys.argv[1]
 
     if option == 'FD':
