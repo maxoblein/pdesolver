@@ -4,9 +4,9 @@ def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
     '''
     Function to plot a loglog error plot given a static mx and varying mt
 
-    Inputs: -method: e.g. 'forward' for forward difference (string)
+    Inputs: -method: e.g. 'fd' for forward difference (string)
             -initial_cond: Function for U(x,0) callable
-            -boundary_conds:
+            -bc: boundary conditions [lhs,rhs] iterable
             -mx: Number of gridpoints in space (float)
             -params: parameters of the system [kappa,Length of domain in x,Time to solve to]
             -u_exact: Optional function for the exact solution U(x,T) callable
@@ -49,7 +49,7 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
 
     Inputs: -method: e.g. 'forward' for forward difference (string)
             -initial_cond: Function for U(x,0) callable
-            -boundary_conds:
+            -bc: boundary conditions [lhs,rhs] iterable
             -mt: Number of gridpoints in time (float)
             -params: parameters of the system [kappa,Length of domain in x,Time to solve to]
             -u_exact: Optional function for the exact solution U(x,T) callable
