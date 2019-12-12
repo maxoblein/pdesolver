@@ -60,7 +60,6 @@ def update_step(method,A,B,u_j,bc_vector):
     if method == 'cn':
         return spsolve(A,B.dot(u_j + bc_vector))
 
-
 def solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
     '''
     A function that implements the matrix form
@@ -123,7 +122,6 @@ def find_error_with_true(u_T_approx,u_T_exact,dx):
     error =  np.linalg.norm(u_T_exact - u_T_approx)
     error = error/np.size(u_T_exact)
     return error
-
 
 def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],u_exact = 0,plot = False):
     '''
