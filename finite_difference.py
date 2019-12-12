@@ -111,7 +111,7 @@ def solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector):
     u_T = u_j
     return u_T
 
-def find_error_with_true(u_T_approx,u_T_exact):
+def find_error_with_true(u_T_approx,u_T_exact,dx):
     '''
     Function to compute the error with an exact solution
 
@@ -152,9 +152,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
     deltax = x[1] - x[0]            # gridspacing in x
     deltat = t[1] - t[0]            # gridspacing in t
     lmbda = kappa*deltat/(deltax**2)    # mesh fourier number
-    # print("deltax=",deltax)
-    # print("deltat=",deltat)
-    # print("lambda=",lmbda)
+
 
     for i in range(len(bc)):
         if isinstance(bc[i],float) or isinstance(bc[i],int):

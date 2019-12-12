@@ -1,5 +1,6 @@
 from finite_difference import *
-from errors import * 
+from errors import *
+import sys
 def initial_cond(x,params):
     # initial temperature distribution
     L = params[1]
@@ -19,6 +20,11 @@ def lhs(t):
 def rhs(t):
     return -2*t
 
-# u_T,diagnostics = Finite_Difference(initial_cond,[0,0],100,1000,(1.0,1.0,0.5),b_type = [1,0],plot = True)
-# print(diagnostics[3])
-error_plot_vary_mx('bd',initial_cond,[0,0],1000,(1.0,1.0,0.5),u_exact=u_exact)
+if __name__ == '__main__':
+    option = sys.argv[1]
+
+    if option == 'FD':
+        u_T,diagnostics = Finite_Difference(initial_cond,[0,0],100,1000,(1.0,1.0,0.5),b_type = [0,0],plot = True)
+
+    if option == 'Error':
+        error_plot_vary_mt('bd',initial_cond,[0,0],1000,(1.0,1.0,0.5),u_exact=u_exact)

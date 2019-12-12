@@ -19,11 +19,10 @@ def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
             u_T,diagnostics = Finite_Difference(initial_cond,bc,mx,mt,params,method = method,b_type = [0,0])
             u_T_exact = u_exact(np.linspace(0, params[1], mx+1),params[2],params)
             deltat_list.append(diagnostics[1])
-            error_list.append(find_error_with_true(u_T,u_T_exact))
+            error_list.append(find_error_with_true(u_T,u_T_exact,diagnostics[0]))
         pl.loglog(deltat_list,error_list)
         slope, intercept = np.polyfit(np.log(deltat_list), np.log(error_list), 1)
         print(slope)
-        pl.title('Plot of error trends in Crank-Nicolson')
 
 
     else:
@@ -34,14 +33,13 @@ def error_plot_vary_mt(method,initial_cond,bc,mx,params,u_exact = 0):
             u_T_list.append(u_T)
             deltat_list.append(diagnostics[2])
         for i in range(len(u_T_list)-1):
-            error_list.append(find_error_with_true(u_T_list[i],u_T_list[i+1]))
+            error_list.append(find_error_with_true(u_T_list[i],u_T_list[i+1],diagnostics[0]))
 
         pl.loglog(deltat_list[:-1],error_list)
         slope, intercept = np.polyfit(np.log(deltat_list[:-1]), np.log(error_list), 1)
         print(slope)
-        pl.title('Plot of error trends in Crank-Nicolson')
     pl.xlabel(r'$\Delta t$')
-    pl.ylabel(r'Error between finite difference at $mt$ and $2mt$')
+    pl.ylabel(r'Error')
     pl.show()
     return True
 
@@ -89,6 +87,6 @@ def error_plot_vary_mx(method,initial_cond,boundary_conds,mt,params,u_exact = 0)
         pl.loglog(deltax_list[:-1],error_list)
     pl.title('Plot of error trends in Crank-Nicolson')
     pl.xlabel(r'$\Delta x$')
-    pl.ylabel('Error between finite difference and exact solution')
+    pl.ylabel('Error')
     pl.show()
     return True

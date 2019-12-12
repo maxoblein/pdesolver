@@ -78,9 +78,10 @@ def test_incorrect_method():
     else:
         print('Incorrect method test failed')
 if __name__ == '__main__':
-    test_forward_unstable()
+
     test_forward_output()
     test_backward_output()
     test_crank_output()
+    test_forward_unstable()
     test_incorrect_b_type()
     test_incorrect_method()
