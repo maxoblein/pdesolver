@@ -186,9 +186,10 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
         B = None
 
     if method == 'cn':
+        # define diagonal matrices for crank nicholson
         A,bc_vector = matrix_init(mx,(1+lmbda),(-lmbda/2),b_type)
         B,bc_vector = matrix_init(mx,(1-lmbda),(lmbda/2),b_type)
-        # define diagonal matrices for crank nicholson
+
 
     u_T = solver(method,lmbda,mx,mt,deltat,deltax,u_j,bc,b_type,A,B,bc_vector)
 
@@ -201,7 +202,7 @@ def Finite_Difference(initial_cond,bc,mx,mt,params,method = 'cn',b_type = [0,0],
         pl.xlabel('x')
         pl.ylabel('u(x,0.5)')
         pl.title(r'Temperature distribution at $t = T$')
-        #pl.legend(loc='upper right')
+        pl.legend(loc='upper right')
         pl.show()
 
     diagnostics = [deltax,deltat,lmbda]
